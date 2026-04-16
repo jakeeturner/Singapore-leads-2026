@@ -645,7 +645,16 @@
         let sortAscending = false;
 
         // Initialize
+        function updateKPIs() {
+            document.getElementById('kpi-total').textContent = LEADS_DATA.length;
+            document.getElementById('kpi-tier-a').textContent = LEADS_DATA.filter(l => l.lead_tier === 'A').length;
+            const totalValue = LEADS_DATA.reduce((sum, l) => sum + (l.total_value_usd || 0), 0);
+            const avgValue = LEADS_DATA.length > 0 ? totalValue / LEADS_DATA.length : 0;
+            document.getElementById('kpi-avg-value').textContent = avgValue >= 1e6 ? '$' + (avgValue / 1e6).toFixed(0) + 'M' : '$' + (avgValue / 1e3).toFixed(0) + 'K';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            updateKPIs();
             populateOriginFilter();
             populateDestinationFilter();
             populateIndustryFilter();
@@ -735,15 +744,20 @@
             const end = start + itemsPerPage;
             const pageData = filteredData.slice(start, end);
 
+            const activeOrigin = document.getElementById('origin-filter').value;
+            const activeDest = document.getElementById('destination-filter').value;
+
             pageData.forEach((lead, idx) => {
-                const [mainRow, detailRow] = createLeadRow(lead, start + idx);
+                const [mainRow, detailRow] = createLeadRow(lead, start + idx, activeOrigin, activeDest);
                 tbody.appendChild(mainRow);
                 tbody.appendChild(detailRow);
             });
         }
 
-        function createLeadRow(lead, rowIndex) {
+        function createLeadRow(lead, rowIndex, activeOrigin, activeDest) {
             const detailRowId = `detail-${rowIndex}`;
+            const displayOrigin = activeOrigin ? activeOrigin : lead.origin_country;
+            const displayDest = activeDest ? activeDest : lead.destination_country;
 
             // Main row
             const mainTr = document.createElement('tr');
@@ -751,8 +765,8 @@
                 <td class="score-cell">${lead.lead_score}</td>
                 <td><span class="tier-badge tier-${lead.lead_tier.toLowerCase()}">${lead.lead_tier}</span></td>
                 <td>${lead.company_name}</td>
-                <td>${formatCountryBadges(lead.origin_country)}</td>
-                <td>${formatCountryBadges(lead.destination_country)}</td>
+                <td>${formatCountryBadges(displayOrigin)}</td>
+                <td>${formatCountryBadges(displayDest)}</td>
                 <td>${lead.industry}</td>
                 <td>${lead.est_revenue}</td>
                 <td>${formatDataSources(lead.datasets_found)}</td>
